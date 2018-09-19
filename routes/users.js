@@ -29,13 +29,20 @@ router.post('/', function(req, res, next) {
       .then(function (resp) {
         console.log(resp.email);
         console.log(resp.event.url);
-        // console.log(resp);
+
+        req.body.email = resp.email;
+        req.body.eventURL = resp.event.url;
+        req.body.eventName = resp.event.name.text;
+        req.body.firstName = resp.first_name;
+        req.body.lastName = resp.last_name;
+
+        next();
       })
       .catch(function (err) {
           // API call failed...
       });
   
-    res.sendStatus(200);
+    // res.sendStatus(200);
   }
   else if (req.body.config.action === 'barcode.checked_in') {
 
@@ -55,14 +62,73 @@ router.post('/', function(req, res, next) {
         // console.log(resp.email);
         // console.log(resp.event.url);
         console.log(resp.profile.email);
+
+        req.body.email = resp.profile.email;
+
+        next();
       })
       .catch(function (err) {
           // API call failed...
       });
 
     // console.log(req.body);
-    res.sendStatus(200);
+    // res.sendStatus(200);
   } 
+}, function (req, res) {
+
+  if (req.body.eventURL) {
+
+    var options = {
+      method: 'PUT',
+      uri: process.env.INFUSIONSOFT_URL,
+      qs: {
+          access_token: process.env.INFUSIONSOFT_TOKEN // -> uri + '?access_token=xxxxx%20xxxxx'
+      },
+      headers: {
+          'User-Agent': 'Request-Promise'
+      },
+      body: {
+        "duplicate_option": "Email",
+        "email_addresses": [
+          {
+            "email": req.body.email,
+            "field": "EMAIL1"
+          }
+        ],
+        "custom_fields" : [
+          {
+            "content" : req.body.eventURL,
+            "id" : 23
+          },
+          {
+            "content" : req.body.eventName,
+            "id" : 31
+          }
+        ],
+        "given_name" : req.body.firstName,
+        "family_name" : req.body.lastName
+      },
+      json: true // Automatically parses the JSON string in the response
+    };
+  
+    rp(options)
+      .then(function (resp) {
+        // console.log(resp.email);
+        // console.log(resp.event.url);
+        console.log(resp);
+      })
+      .catch(function (err) {
+  
+        console.log(err);
+          // API call failed...
+      });
+    res.sendStatus(200);
+    
+  }
+  else {
+    
+  }
+
 });
 
 module.exports = router;
