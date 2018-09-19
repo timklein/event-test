@@ -74,7 +74,7 @@ router.post('/', function(req, res, next) {
     // console.log(req.body);
     // res.sendStatus(200);
   } 
-}, function (req, res) {
+}, function (req, res, next) {
 
   if (req.body.eventURL) {
 
@@ -126,9 +126,49 @@ router.post('/', function(req, res, next) {
     
   }
   else {
-    
+
+    let options = {
+      uri : process.env.INFUSIONSOFT_URL,
+      qs : {
+        access_token : process.env.INFUSIONSOFT_TOKEN,
+        email : req.body.email
+      }
+    }
+
+    rp(options)
+    .then(function (resp) {
+      console.log(JSON.parse(resp).contacts[0].id);
+      req.body.id = JSON.parse(resp).contacts[0].id;
+      next();
+    })
+    .catch(function (err) {
+      console.error(err);
+    });
+  }
+}, function(req, res) {
+  console.log(req.body);
+
+  let options = {
+    "method" : 'POST',
+    "uri" : process.env.INFUSIONSOFT_URL + '/' + req.body.id + '/tags',
+    "qs" : {
+      access_token : process.env.INFUSIONSOFT_TOKEN,
+    },
+    body : {
+      tagIds : [ 319 ]
+    },
+    json : true
   }
 
+  rp(options)
+  .then(function (resp) {
+    console.log(resp)
+  })
+  .catch(function (err) {
+    console.error(err);
+  });
+
+  res.sendStatus(200);
 });
 
 module.exports = router;
