@@ -23,9 +23,9 @@ router.post('/', function(req, res, next) {
       json: true // Automatically parses the JSON string in the response
     };
   
-  console.log(options);
+    console.log(options);
    
-  rp(options)
+    rp(options)
       .then(function (resp) {
         console.log(resp.email);
         console.log(resp.event.url);
@@ -39,10 +39,8 @@ router.post('/', function(req, res, next) {
         next();
       })
       .catch(function (err) {
-          // API call failed...
+        console.error(err);
       });
-  
-    // res.sendStatus(200);
   }
   else if (req.body.config.action === 'barcode.checked_in') {
 
@@ -59,20 +57,18 @@ router.post('/', function(req, res, next) {
 
     rp(options)
       .then(function (resp) {
-        // console.log(resp.email);
-        // console.log(resp.event.url);
         console.log(resp.profile.email);
-
         req.body.email = resp.profile.email;
-
+        
         next();
       })
       .catch(function (err) {
-          // API call failed...
+        console.error(err);
       });
-
-    // console.log(req.body);
-    // res.sendStatus(200);
+  }
+  else {
+    console.log(req.body);
+    res.sendStatus(200);
   } 
 }, function (req, res, next) {
 
@@ -113,15 +109,12 @@ router.post('/', function(req, res, next) {
   
     rp(options)
       .then(function (resp) {
-        // console.log(resp.email);
-        // console.log(resp.event.url);
         console.log(resp);
       })
       .catch(function (err) {
-  
         console.log(err);
-          // API call failed...
       });
+
     res.sendStatus(200);
     
   }
@@ -136,16 +129,17 @@ router.post('/', function(req, res, next) {
     }
 
     rp(options)
-    .then(function (resp) {
-      console.log(JSON.parse(resp).contacts[0].id);
-      req.body.id = JSON.parse(resp).contacts[0].id;
-      next();
-    })
-    .catch(function (err) {
-      console.error(err);
-    });
+      .then(function (resp) {
+        console.log(JSON.parse(resp).contacts[0].id);
+        req.body.id = JSON.parse(resp).contacts[0].id;
+        next();
+      })
+      .catch(function (err) {
+        console.error(err);
+      });
   }
 }, function(req, res) {
+  
   console.log(req.body);
 
   let options = {
@@ -161,12 +155,12 @@ router.post('/', function(req, res, next) {
   }
 
   rp(options)
-  .then(function (resp) {
-    console.log(resp)
-  })
-  .catch(function (err) {
-    console.error(err);
-  });
+    .then(function (resp) {
+      console.log(resp)
+    })
+    .catch(function (err) {
+      console.error(err);
+    });
 
   res.sendStatus(200);
 });
