@@ -9,8 +9,9 @@ router.get('/', function(req, res, next) {
 });
 
 router.post('/', function(req, res, next) {
-
+  // If a ticket order comes in via webhook, request the data associated with the specific ticket order, expanding the details of the event for additional required information
   if (req.body.config.action === 'order.placed') {
+
     var options = {
       uri: req.body.api_url,
       qs: {
@@ -23,13 +24,9 @@ router.post('/', function(req, res, next) {
       json: true // Automatically parses the JSON string in the response
     };
   
-    console.log(options);
-   
     rp(options)
+      // Collect the information required to update Infusionsoft and send it along to the next step
       .then(function (resp) {
-        console.log(resp.email);
-        console.log(resp.event.url);
-
         req.body.email = resp.email;
         req.body.eventURL = resp.event.url;
         req.body.eventName = resp.event.name.text;
@@ -39,9 +36,12 @@ router.post('/', function(req, res, next) {
         next();
       })
       .catch(function (err) {
-        console.error(err);
+        console.error(err.message);
+        // Make sure to send an email about bad Eventbrite OAuth token - Most likely cause of failure here
+        res.sendStatus(200);
       });
   }
+  // If instead, this is an event checkin webhook, request the attendee data to obtain the email address of the attendee
   else if (req.body.config.action === 'barcode.checked_in') {
 
     var options = {
@@ -56,22 +56,24 @@ router.post('/', function(req, res, next) {
     };
 
     rp(options)
+      // Get the email address for the attendee and send it along to the next step
       .then(function (resp) {
-        console.log(resp.profile.email);
         req.body.email = resp.profile.email;
-        
         next();
       })
       .catch(function (err) {
-        console.error(err);
+        console.error(err.message);
+        // Make sure to send an email about bad Eventbrite OAuth token - Most likely cause of failure here
+        res.sendStatus(200);
       });
   }
+  // If it's something else coming from the webhook, acknowledge and log - This is likely only the webhook setup test
   else {
     console.log(req.body);
     res.sendStatus(200);
   } 
 }, function (req, res, next) {
-
+  // If there's an eventURL, this is a contact update so submit the data to update
   if (req.body.eventURL) {
 
     var options = {
@@ -118,6 +120,7 @@ router.post('/', function(req, res, next) {
     res.sendStatus(200);
     
   }
+  // If it's not contact data update, it's the tag update so you need to first get the ID for the contact you're updating
   else {
 
     let options = {
@@ -139,9 +142,7 @@ router.post('/', function(req, res, next) {
       });
   }
 }, function(req, res) {
-  
-  console.log(req.body);
-
+  // Add the tag to the previously found contactID
   let options = {
     "method" : 'POST',
     "uri" : process.env.INFUSIONSOFT_URL + '/' + req.body.id + '/tags',
